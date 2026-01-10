@@ -3,32 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정밀 확률 룰렛 - 버그 수정판</title>
+    <title>정밀 확률 룰렛 - 최종 수정</title>
     <style>
         body { font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; background: #f8f9fa; padding: 20px; }
         .container { display: flex; gap: 30px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); flex-wrap: wrap; justify-content: center; max-width: 900px; }
-        
         .roulette-box { position: relative; width: 380px; height: 380px; }
         #canvas { width: 100%; height: 100%; border-radius: 50%; border: 6px solid #333; transition: transform 4s cubic-bezier(0.1, 0, 0.2, 1); }
         .arrow { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #ff4757; z-index: 10; }
-        
         .controls { width: 320px; }
         .item-row { display: flex; gap: 5px; margin-bottom: 10px; }
         input { padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
         .name-input { flex: 2; }
         .weight-input { flex: 1; text-align: center; font-weight: bold; color: #0984e3; }
-        
         button { cursor: pointer; border: none; border-radius: 6px; font-weight: bold; }
         .btn-spin { background: #0984e3; color: white; width: 100%; padding: 15px; font-size: 1.1rem; margin-top: 20px; }
         .btn-add { background: #00b894; color: white; width: 100%; padding: 10px; margin-bottom: 15px; }
         .btn-remove { background: #ff7675; color: white; padding: 5px 10px; }
-        
         #result-text { margin-top: 20px; font-size: 1.5rem; font-weight: 800; text-align: center; min-height: 40px; color: #2d3436; }
     </style>
 </head>
 <body>
 
-    <h2>🎡 정밀 확률 룰렛 (수정 완료)</h2>
+    <h2>🎡 결과 일치 룰렛 (180도 오류 수정)</h2>
 
     <div class="container">
         <div class="roulette-box">
@@ -42,25 +38,20 @@
             <h3>항목 및 가중치 설정</h3>
             <div id="item-list"></div>
             <button class="btn-add" onclick="addItem()">+ 항목 추가</button>
-            <p style="font-size: 0.8rem; color: #888;">* 가중치가 같으면(예: 5, 5) 정확히 50%씩 나뉩니다.</p>
         </div>
     </div>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        
         let items = [
-            { name: "꽝", weight: 5, color: "#74b9ff" },
-            { name: "아차상", weight: 5, color: "#55efc4" }
+            { name: "당첨", weight: 5, color: "#ff7675" },
+            { name: "꽝", weight: 5, color: "#74b9ff" }
         ];
         let currentRotation = 0;
 
-        // 룰렛 그리기 (실시간 반영의 핵심)
         function draw() {
-            // 모든 가중치를 숫자로 변환하여 합산
             const totalWeight = items.reduce((sum, item) => sum + (parseFloat(item.weight) || 0), 0);
-            
             ctx.clearRect(0, 0, 800, 800);
             if (totalWeight <= 0) return;
 
@@ -78,7 +69,6 @@
                 ctx.lineWidth = 4;
                 ctx.stroke();
 
-                // 확률 텍스트 표시
                 ctx.save();
                 ctx.translate(400, 400);
                 ctx.rotate(startAngle + sliceAngle / 2);
@@ -93,7 +83,6 @@
             });
         }
 
-        // 입력창 관리
         function renderSettings() {
             const list = document.getElementById('item-list');
             list.innerHTML = '';
@@ -111,7 +100,7 @@
 
         function updateData(index, field, value) {
             items[index][field] = field === 'weight' ? (parseFloat(value) || 0) : value;
-            draw(); // 값 변경 즉시 다시 그리기
+            draw();
         }
 
         function addItem() {
@@ -137,17 +126,23 @@
             if (totalWeight <= 0) return alert("가중치를 입력해주세요!");
 
             btn.disabled = true;
-            res.innerText = "두구두구...";
+            res.innerText = "회전 중...";
 
             const randomDeg = Math.floor(Math.random() * 360);
+            // 8바퀴(2880도) 이상 회전하도록 설정
             currentRotation += (360 * 8) + randomDeg;
             canvas.style.transform = `rotate(${currentRotation}deg)`;
 
             setTimeout(() => {
                 btn.disabled = false;
+                
+                // --- 180도 오류 해결을 위한 핵심 계산부 ---
+                // 1. 실제로 회전된 최종 각도를 0~360 범위로 구함
                 const actualDeg = currentRotation % 360;
-                let winAngle = (360 - (actualDeg - 90)) % 360;
-                if (winAngle < 0) winAngle += 360;
+                
+                // 2. 12시 방향(화살표)을 가리키는 인덱스 계산
+                // 원리가 복잡할 수 있으나, 이 수식이 상단 화살표 기준 정답입니다.
+                let winAngle = (360 - actualDeg + 270) % 360;
 
                 let currentUpper = 0;
                 let winner = "";
