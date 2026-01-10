@@ -2,130 +2,121 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>실시간 확률 반영 룰렛</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>정밀 확률 룰렛 - 버그 수정판</title>
     <style>
-        body { font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding: 20px; }
-        .container { display: flex; gap: 40px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); flex-wrap: wrap; justify-content: center; }
+        body { font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; background: #f8f9fa; padding: 20px; }
+        .container { display: flex; gap: 30px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); flex-wrap: wrap; justify-content: center; max-width: 900px; }
         
-        /* 룰렛 스타일 */
-        .roulette-box { position: relative; width: 420px; height: 420px; }
-        #canvas { width: 100%; height: 100%; border-radius: 50%; border: 8px solid #333; transition: transform 4s cubic-bezier(0.1, 0, 0.2, 1); background: white; }
-        .arrow { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #ff4757; z-index: 10; }
+        .roulette-box { position: relative; width: 380px; height: 380px; }
+        #canvas { width: 100%; height: 100%; border-radius: 50%; border: 6px solid #333; transition: transform 4s cubic-bezier(0.1, 0, 0.2, 1); }
+        .arrow { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #ff4757; z-index: 10; }
         
-        /* 설정창 스타일 */
-        .controls { width: 350px; }
-        .item-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
-        input { padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
-        .name-input { flex: 2; font-weight: bold; }
-        .weight-input { flex: 1; text-align: center; color: #0984e3; font-weight: bold; }
+        .controls { width: 320px; }
+        .item-row { display: flex; gap: 5px; margin-bottom: 10px; }
+        input { padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .name-input { flex: 2; }
+        .weight-input { flex: 1; text-align: center; font-weight: bold; color: #0984e3; }
         
-        button { cursor: pointer; border: none; border-radius: 8px; font-weight: bold; transition: 0.2s; }
-        .btn-spin { background: #0984e3; color: white; width: 100%; padding: 18px; font-size: 1.2rem; margin-top: 20px; }
-        .btn-add { background: #00b894; color: white; width: 100%; padding: 12px; margin-bottom: 20px; }
-        .btn-remove { background: #fab1a0; color: #d63031; padding: 8px 12px; }
+        button { cursor: pointer; border: none; border-radius: 6px; font-weight: bold; }
+        .btn-spin { background: #0984e3; color: white; width: 100%; padding: 15px; font-size: 1.1rem; margin-top: 20px; }
+        .btn-add { background: #00b894; color: white; width: 100%; padding: 10px; margin-bottom: 15px; }
+        .btn-remove { background: #ff7675; color: white; padding: 5px 10px; }
         
-        #result-display { margin-top: 25px; font-size: 1.8rem; font-weight: 800; color: #2d3436; text-align: center; height: 40px; }
-        .prob-info { font-size: 0.9rem; color: #636e72; background: #dfe6e9; padding: 10px; border-radius: 8px; margin-top: 10px; }
+        #result-text { margin-top: 20px; font-size: 1.5rem; font-weight: 800; text-align: center; min-height: 40px; color: #2d3436; }
     </style>
 </head>
 <body>
 
-    <h1>🎡 실시간 정밀 확률 룰렛</h1>
+    <h2>🎡 정밀 확률 룰렛 (수정 완료)</h2>
 
     <div class="container">
         <div class="roulette-box">
             <div class="arrow"></div>
             <canvas id="canvas" width="800" height="800"></canvas>
-            <button class="btn-spin" id="spinBtn" onclick="spin()">룰렛 돌리기!</button>
-            <div id="result-display">결과를 확인하세요</div>
+            <button class="btn-spin" id="spinBtn" onclick="spin()">돌리기!</button>
+            <div id="result-text">가중치를 입력해 보세요!</div>
         </div>
 
         <div class="controls">
-            <h3>📊 항목 및 확률 설정</h3>
+            <h3>항목 및 가중치 설정</h3>
             <div id="item-list"></div>
             <button class="btn-add" onclick="addItem()">+ 항목 추가</button>
-            <div class="prob-info">
-                💡 <b>가중치(오른쪽 숫자)</b>를 수정해 보세요!<br>
-                숫자를 키우면 해당 칸이 즉시 커집니다.
-            </div>
+            <p style="font-size: 0.8rem; color: #888;">* 가중치가 같으면(예: 5, 5) 정확히 50%씩 나뉩니다.</p>
         </div>
     </div>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        
         let items = [
-            { name: "당첨", weight: 1, color: "#ff7675" },
-            { name: "꽝", weight: 3, color: "#74b9ff" },
-            { name: "재도전", weight: 2, color: "#55efc4" }
+            { name: "꽝", weight: 5, color: "#74b9ff" },
+            { name: "아차상", weight: 5, color: "#55efc4" }
         ];
         let currentRotation = 0;
 
-        // 룰렛 그리기 함수 (중요: 가중치 변화를 즉시 반영)
+        // 룰렛 그리기 (실시간 반영의 핵심)
         function draw() {
-            const totalWeight = items.reduce((sum, item) => sum + (Number(item.weight) || 0), 0);
+            // 모든 가중치를 숫자로 변환하여 합산
+            const totalWeight = items.reduce((sum, item) => sum + (parseFloat(item.weight) || 0), 0);
+            
+            ctx.clearRect(0, 0, 800, 800);
             if (totalWeight <= 0) return;
 
             let startAngle = 0;
-            ctx.clearRect(0, 0, 800, 800);
-
             items.forEach((item) => {
-                const sliceAngle = (item.weight / totalWeight) * 2 * Math.PI;
+                const weightValue = parseFloat(item.weight) || 0;
+                const sliceAngle = (weightValue / totalWeight) * 2 * Math.PI;
                 
-                // 조각 그리기
                 ctx.beginPath();
                 ctx.fillStyle = item.color;
                 ctx.moveTo(400, 400);
                 ctx.arc(400, 400, 380, startAngle, startAngle + sliceAngle);
                 ctx.fill();
                 ctx.strokeStyle = "white";
-                ctx.lineWidth = 3;
+                ctx.lineWidth = 4;
                 ctx.stroke();
 
-                // 텍스트 및 확률 표시
+                // 확률 텍스트 표시
                 ctx.save();
                 ctx.translate(400, 400);
                 ctx.rotate(startAngle + sliceAngle / 2);
                 ctx.textAlign = "right";
                 ctx.fillStyle = "white";
-                ctx.font = "bold 32px Arial";
-                
-                const percent = ((item.weight / totalWeight) * 100).toFixed(1);
-                // 칸이 너무 작으면 이름만 표시
-                const label = sliceAngle > 0.15 ? `${item.name} (${percent}%)` : "";
-                ctx.fillText(label, 350, 10);
+                ctx.font = "bold 30px Arial";
+                const percent = ((weightValue / totalWeight) * 100).toFixed(1);
+                if (sliceAngle > 0.1) ctx.fillText(`${item.name} ${percent}%`, 350, 10);
                 ctx.restore();
 
                 startAngle += sliceAngle;
             });
         }
 
-        // 설정창 목록 렌더링
+        // 입력창 관리
         function renderSettings() {
-            const container = document.getElementById('item-list');
-            container.innerHTML = '';
-            
+            const list = document.getElementById('item-list');
+            list.innerHTML = '';
             items.forEach((item, i) => {
                 const div = document.createElement('div');
                 div.className = 'item-row';
                 div.innerHTML = `
-                    <input type="text" class="name-input" value="${item.name}" 
-                        oninput="items[${i}].name=this.value; draw();">
-                    <input type="number" class="weight-input" value="${item.weight}" min="0"
-                        oninput="items[${i}].weight=Number(this.value); draw();">
-                    <button class="btn-remove" onclick="removeItem(${i})">삭제</button>
+                    <input type="text" class="name-input" value="${item.name}" oninput="updateData(${i}, 'name', this.value)">
+                    <input type="number" class="weight-input" value="${item.weight}" oninput="updateData(${i}, 'weight', this.value)">
+                    <button class="btn-remove" onclick="removeItem(${i})">X</button>
                 `;
-                container.appendChild(div);
+                list.appendChild(div);
             });
         }
 
+        function updateData(index, field, value) {
+            items[index][field] = field === 'weight' ? (parseFloat(value) || 0) : value;
+            draw(); // 값 변경 즉시 다시 그리기
+        }
+
         function addItem() {
-            const colors = ["#ff7675", "#74b9ff", "#55efc4", "#ffeaa7", "#a29bfe", "#fd79a8", "#fab1a0"];
-            items.push({ 
-                name: "새 항목", 
-                weight: 1, 
-                color: colors[items.length % colors.length] 
-            });
+            const colors = ["#ff7675", "#74b9ff", "#55efc4", "#ffeaa7", "#a29bfe", "#fd79a8"];
+            items.push({ name: "새 항목", weight: 5, color: colors[items.length % colors.length] });
             renderSettings();
             draw();
         }
@@ -140,40 +131,38 @@
 
         function spin() {
             const btn = document.getElementById('spinBtn');
-            const resultDisplay = document.getElementById('result-display');
+            const res = document.getElementById('result-text');
+            const totalWeight = items.reduce((sum, item) => sum + (parseFloat(item.weight) || 0), 0);
+            
+            if (totalWeight <= 0) return alert("가중치를 입력해주세요!");
+
             btn.disabled = true;
-            resultDisplay.innerText = "두구두구두구...";
+            res.innerText = "두구두구...";
 
-            const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
-            const randomAdd = Math.floor(Math.random() * 360);
-            currentRotation += (360 * 10) + randomAdd; // 10바퀴 + 랜덤
-
+            const randomDeg = Math.floor(Math.random() * 360);
+            currentRotation += (360 * 8) + randomDeg;
             canvas.style.transform = `rotate(${currentRotation}deg)`;
 
             setTimeout(() => {
                 btn.disabled = false;
-                
-                // 결과 계산 보정 (12시 화살표 방향)
                 const actualDeg = currentRotation % 360;
                 let winAngle = (360 - (actualDeg - 90)) % 360;
                 if (winAngle < 0) winAngle += 360;
 
                 let currentUpper = 0;
                 let winner = "";
-
                 for (let item of items) {
-                    const itemDeg = (item.weight / totalWeight) * 360;
+                    const itemDeg = (parseFloat(item.weight) / totalWeight) * 360;
                     if (winAngle >= currentUpper && winAngle < currentUpper + itemDeg) {
                         winner = item.name;
                         break;
                     }
                     currentUpper += itemDeg;
                 }
-                resultDisplay.innerText = `🎉 결과: [${winner}]`;
+                res.innerText = `🎉 결과: [${winner}]`;
             }, 4000);
         }
 
-        // 초기 실행
         renderSettings();
         draw();
     </script>
