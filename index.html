@@ -2,351 +2,167 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>히어로 협회 공식 포털 | Hero Association</title>
+    <title>커스텀 확률 룰렛</title>
     <style>
-        :root {
-            --hero-blue: #00f2ff;
-            --hero-white: #ffffff;
-            --villain-red: #ff003c;
-            --bg-dark: #0a0a0a;
-            --glass: rgba(255, 255, 255, 0.05);
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--hero-white);
-            overflow-x: hidden;
-            transition: background 0.5s;
-            height: 100vh;
-        }
-
-        /* --- Header & Nav --- */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 40px;
-            background: rgba(0, 242, 255, 0.05);
-            border-bottom: 2px solid var(--hero-blue);
-            backdrop-filter: blur(10px);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            font-size: 24px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--hero-blue);
-            text-shadow: 0 0 10px var(--hero-blue);
-            cursor: pointer;
-        }
-
-        .nav-tabs {
-            display: flex;
-            gap: 20px;
-        }
-
-        .nav-btn {
-            background: transparent;
-            border: 1px solid var(--hero-blue);
-            color: var(--hero-blue);
-            padding: 8px 20px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.3s;
-            text-transform: uppercase;
-        }
-
-        .nav-btn:hover, .nav-btn.active {
-            background: var(--hero-blue);
-            color: black;
-            box-shadow: 0 0 15px var(--hero-blue);
-        }
-
-        .admin-panel input {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--hero-blue);
-            padding: 8px 15px;
-            color: var(--hero-blue);
-            border-radius: 4px;
-            outline: none;
-            font-family: monospace;
-        }
-
-        /* --- Content Layout --- */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 40px;
-        }
-
-        .section-content {
-            display: none; /* JS로 제어 */
-            animation: fadeIn 0.5s ease;
-        }
-        .section-content.active { display: block; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .hero-section {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            text-shadow: 0 0 20px rgba(0, 242, 255, 0.5);
-        }
-
-        /* --- Grid Cards (News & Profiles) --- */
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 25px;
-        }
-
-        .card {
-            background: #111;
-            border: 1px solid #333;
-            padding: 25px;
-            border-radius: 8px;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            border-color: var(--hero-blue);
-            box-shadow: 0 0 15px rgba(0, 242, 255, 0.1);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 10px;
-        }
-
-        .rank-badge {
-            background: var(--hero-blue);
-            color: black;
-            font-weight: bold;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-        }
-
-        .card h3 { margin: 0; color: var(--hero-white); font-size: 1.4rem; }
-        .card h4 { margin: 5px 0 0; color: var(--hero-blue); font-size: 0.9rem; font-weight: normal; }
-        .card p { color: #aaa; line-height: 1.6; font-size: 0.95rem; }
-
-        /* --- Truth Mode (Villain) --- */
-        body.truth-mode { background-color: #000; color: #ccc; }
-        body.truth-mode header { border-bottom-color: var(--villain-red); }
-        body.truth-mode .logo { color: var(--villain-red); text-decoration: line-through; }
-        body.truth-mode .nav-btn { border-color: var(--villain-red); color: var(--villain-red); }
-        body.truth-mode .nav-btn:hover, body.truth-mode .nav-btn.active { background: var(--villain-red); color: white; box-shadow: 0 0 15px var(--villain-red); }
-        body.truth-mode .admin-panel input { border-color: var(--villain-red); color: var(--villain-red); }
+        body { font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding: 20px; }
+        .container { display: flex; gap: 40px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         
-        body.truth-mode .card { border-color: var(--villain-red); background: #080000; }
-        body.truth-mode .card h4 { color: var(--villain-red); }
-        body.truth-mode .rank-badge { background: var(--villain-red); color: white; }
+        /* 룰렛 스타일 */
+        .roulette-container { position: relative; width: 400px; height: 400px; }
+        #canvas { width: 100%; height: 100%; border-radius: 50%; border: 5px solid #333; }
+        .pointer { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #ff4757; z-index: 10; }
         
-        /* Content Switching for Truth Mode */
-        .truth-text { display: none; color: #ff6b8b; }
-        body.truth-mode .public-text { display: none; }
-        body.truth-mode .truth-text { display: block; }
+        /* 설정창 스타일 */
+        .controls { width: 300px; }
+        .input-group { display: flex; gap: 5px; margin-bottom: 10px; }
+        input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .name-input { flex: 2; }
+        .weight-input { flex: 1; }
         
-        /* --- Emergency Overlay --- */
-        #emergency-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 0, 0, 0.9); z-index: 9999;
-            flex-direction: column; justify-content: center; align-items: center; text-align: center;
-            animation: pulse-bg 0.5s infinite;
-        }
-        #countdown { font-size: 10rem; font-weight: bold; color: yellow; }
-        @keyframes pulse-bg { 0% {background:rgba(200,0,0,0.9);} 50% {background:rgba(100,0,0,0.95);} 100% {background:rgba(200,0,0,0.9);} }
-
+        button { cursor: pointer; border: none; border-radius: 5px; transition: 0.2s; }
+        .btn-add { background: #2ecc71; color: white; width: 100%; padding: 10px; margin-bottom: 20px; }
+        .btn-spin { background: #3498db; color: white; width: 100%; padding: 15px; font-size: 1.2rem; font-weight: bold; margin-top: 10px; }
+        .btn-remove { background: #ff4757; color: white; padding: 5px 10px; }
+        
+        #result { margin-top: 20px; font-size: 1.5rem; font-weight: bold; color: #2c3e50; }
+        .prob-display { font-size: 0.8rem; color: #666; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="logo" onclick="location.reload()">HERO ASSOCIATION</div>
-        
-        <nav class="nav-tabs">
-            <button class="nav-btn active" onclick="switchTab('news')">NEWS</button>
-            <button class="nav-btn" onclick="switchTab('leadership')">ORGANIZATION</button>
-        </nav>
-
-        <div class="admin-panel">
-            <input type="password" id="admin-code" placeholder="ADMIN CODE" onkeypress="checkCode(event)">
-        </div>
-    </header>
+    <h1>🎯 상세 확률 커스텀 룰렛</h1>
 
     <div class="container">
-        
-        <div id="news-section" class="section-content active">
-            <div class="hero-section">
-                <h1 class="public-text">PEACE & JUSTICE</h1>
-                <h1 class="truth-text" style="color:var(--villain-red)">LIES & CONTROL</h1>
-                <p class="public-text">히어로 협회는 언제나 시민 여러분의 곁에 있습니다.</p>
-                <p class="truth-text">협회는 당신을 감시하고 통제합니다.</p>
-            </div>
-            <div class="grid-container">
-                <div class="card">
-                    <h3>[속보] 빌런 습격 제압</h3>
-                    <p class="public-text">S급 히어로들의 활약으로 인명 피해 없이 상황 종료.</p>
-                    <p class="truth-text">시위대는 전원 사살되었다. 언론 통제 중.</p>
-                </div>
-                <div class="card">
-                    <h3>에테르 정기 접종</h3>
-                    <p class="public-text">더 나은 미래를 위한 선택, 부작용 0% 도전.</p>
-                    <p class="truth-text">세뇌 칩 업데이트 배포 중. 거부 시 구속.</p>
-                </div>
-            </div>
+        <div class="roulette-container">
+            <div class="pointer"></div>
+            <canvas id="canvas" width="800" height="800"></canvas>
+            <button class="btn-spin" onclick="spin()">돌리기!</button>
+            <div id="result">결과가 여기에 표시됩니다.</div>
         </div>
 
-        <div id="leadership-section" class="section-content">
-            <div class="hero-section">
-                <h1 class="public-text">SECTOR LEADERS</h1>
-                <h1 class="truth-text" style="color:var(--villain-red)">THE WARDENS</h1>
-                <p class="public-text">각 구역을 수호하는 든든한 총책임자들을 소개합니다.</p>
-                <p class="truth-text">네오 서울을 분할 통치하는 6인의 집행관들입니다.</p>
-            </div>
-
-            <div class="grid-container">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Sector A</h3>
-                        <span class="rank-badge">S-Class</span>
-                    </div>
-                    <h4>총책임자 (19세, 女)</h4>
-                    <p class="public-text">태양의 본질적 에너지를 다루는 협회의 상징. 가장 완벽한 도덕성을 갖춰 '성녀'로 추앙받는 영웅입니다.</p>
-                    <p class="truth-text">가장 강력한 세뇌 실험체. '도덕성'은 프로그래밍된 것이며, 그녀의 태양은 진실을 안 자를 흔적도 없이 태워버립니다.</p>
+        <div class="controls">
+            <h3>항목 및 가중치 설정</h3>
+            <div id="item-list">
                 </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3>아이언 피스트</h3>
-                        <span class="rank-badge">A-Class</span>
-                    </div>
-                    <h4>총책임자 (43세, 男)</h4>
-                    <p class="public-text">전신 합금 능력자이자 협회의 든든한 방패. 형 같은 성격으로 히어로들의 정신적 지주 역할을 합니다.</p>
-                    <p class="truth-text">로터스 칩 과다 동기화로 인간성을 상실. 그는 인격을 잃은 괴물이다.</p>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3>오아시스</h3>
-                        <span class="rank-badge">A-Class</span>
-                    </div>
-                    <h4>총책임자 (21세, 女)</h4>
-                    <p class="public-text">정보관. 빛의 굴절을 이용한 환각과 통신을 총괄합니다. 내성적이라 방에서 업무에만 집중하는 노력파입니다.</p>
-                    <p class="truth-text">감시 사회의 눈. 그녀는 수백만 개의 CCTV와 연결되어 시민들을 실시간 감시하고 있습니다. 지금 당신도</p>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3>체이서</h3>
-                        <span class="rank-badge">S-Class</span>
-                    </div>
-                    <h4>총책임자 (23세, 女)</h4>
-                    <p class="public-text">기동대장. 분자 구조 변형 및 무기 투영 능력 보유. 활발한 성격으로 가장 먼저 현장에 출동합니다.</p>
-                    <p class="truth-text">파괴 중독자. '무기 투영'을 위해 생체 실험을 즐기며, 활발한 성격은 살육 현장에서 느끼는 희열일 뿐입니다.</p>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3>루나</h3>
-                        <span class="rank-badgec">S-Class</span>
-                    </div>
-                    <h4>총책임자 (21세, 女)</h4>
-                    <p class="public-text">달의 힘을 다루는 신비로운 능력자. 차갑고 쌀쌀맞지만 누구보다 임무 처리가 완벽합니다.</p>
-                    <p class="truth-text">밤의 암살자. 칩의 감정 제어 기능을 최대로 높여 감정을 거세당했습니다. 그녀의 '달'은 정신을 교란시키는 파동입니다.</p>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3>저스티스</h3>
-                        <span class="rank-badge">S-Class</span>
-                    </div>
-                    <h4>총책임자 (25세, 男)</h4>
-                    <p class="public-text">중력 제어 능력자. 정의를 따르는 FM적인 성격으로 규율을 중시하는 모범적인 리더입니다.</p>
-                    <p class="truth-text">압제자. 그가 말하는 '정의'는 협회의 매뉴얼 그 자체입니다. 중력으로 시민들을 짓눌러 강제로 무릎 꿇립니다.</p>
-                </div>
-            </div>
+            <button class="btn-add" onclick="addItem()">+ 항목 추가</button>
+            <p style="font-size: 0.9rem; color: #888;">* 가중치가 높을수록 확률이 올라갑니다.</p>
         </div>
-    </div>
-
-    <div id="emergency-overlay">
-        <h1>WARNING!<br>ILLEGAL ACCESS DETECTED</h1>
-        <div id="countdown">3</div>
     </div>
 
     <script>
-        // 탭 전환 함수
-        function switchTab(tabName) {
-            // 모든 콘텐츠 숨기기
-            document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let items = [
+            { name: "당첨", weight: 1, color: "#ff6b6b" },
+            { name: "꽝", weight: 9, color: "#54a0ff" },
+            { name: "보너스", weight: 2, color: "#1dd1a1" }
+        ];
 
-            // 선택된 탭 활성화
-            document.getElementById(tabName + '-section').classList.add('active');
-            
-            // 버튼 스타일 업데이트
-            const btnIndex = tabName === 'news' ? 0 : 1;
-            document.querySelectorAll('.nav-btn')[btnIndex].classList.add('active');
+        let currentRotation = 0;
+        let isSpinning = false;
+
+        function draw() {
+            const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+            let startAngle = 0;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            items.forEach((item, i) => {
+                const sliceAngle = (item.weight / totalWeight) * 2 * Math.PI;
+                
+                ctx.beginPath();
+                ctx.fillStyle = item.color;
+                ctx.moveTo(400, 400);
+                ctx.arc(400, 400, 380, startAngle, startAngle + sliceAngle);
+                ctx.fill();
+                ctx.stroke();
+
+                // 텍스트 그리기
+                ctx.save();
+                ctx.translate(400, 400);
+                ctx.rotate(startAngle + sliceAngle / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "white";
+                ctx.font = "bold 30px Arial";
+                const prob = ((item.weight / totalWeight) * 100).toFixed(1);
+                ctx.fillText(`${item.name} (${prob}%)`, 350, 10);
+                ctx.restore();
+
+                startAngle += sliceAngle;
+            });
         }
 
-        function checkCode(event) {
-            if (event.key === 'Enter') {
-                const input = document.getElementById('admin-code').value;
-                if (input === 'FAKE PARADISE') {
-                    activateTruthMode();
-                } else {
-                    alert('ACCESS DENIED: 보안 당국에 신고 접수됨.');
+        function addItem() {
+            const colors = ["#ff6b6b", "#54a0ff", "#1dd1a1", "#feca57", "#5f27cd", "#48dbfb", "#ff9ff3"];
+            const color = colors[items.length % colors.length];
+            items.push({ name: `항목 ${items.length + 1}`, weight: 1, color: color });
+            renderInputs();
+            draw();
+        }
+
+        function removeItem(index) {
+            items.splice(index, 1);
+            renderInputs();
+            draw();
+        }
+
+        function updateItem(index, field, value) {
+            if (field === 'weight') items[index][field] = Number(value);
+            else items[index][field] = value;
+            draw();
+        }
+
+        function renderInputs() {
+            const list = document.getElementById('item-list');
+            list.innerHTML = '';
+            items.forEach((item, i) => {
+                list.innerHTML += `
+                    <div class="input-group">
+                        <input type="text" class="name-input" value="${item.name}" onchange="updateItem(${i}, 'name', this.value)">
+                        <input type="number" class="weight-input" value="${item.weight}" onchange="updateItem(${i}, 'weight', this.value)">
+                        <button class="btn-remove" onclick="removeItem(${i})">X</button>
+                    </div>
+                `;
+            });
+        }
+
+        function spin() {
+            if (isSpinning) return;
+            isSpinning = true;
+            document.getElementById('result').innerText = "두구두구...";
+
+            const rotateCnt = 10 + Math.floor(Math.random() * 5);
+            const extraDegree = Math.floor(Math.random() * 360);
+            const totalRotation = (rotateCnt * 360) + extraDegree;
+            
+            canvas.style.transition = "transform 4s cubic-bezier(0.15, 0, 0.15, 1)";
+            canvas.style.transform = `rotate(${totalRotation}deg)`;
+
+            setTimeout(() => {
+                isSpinning = false;
+                const finalRotation = (360 - (totalRotation % 360)) % 360;
+                
+                // 수학적 결과 계산
+                const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+                let currentAngle = 0;
+                let winner = "";
+
+                for (let item of items) {
+                    const sliceDegree = (item.weight / totalWeight) * 360;
+                    if (finalRotation >= currentAngle && finalRotation < currentAngle + sliceDegree) {
+                        winner = item.name;
+                        break;
+                    }
+                    currentAngle += sliceDegree;
                 }
-            }
+
+                document.getElementById('result').innerText = `결과: [${winner}]`;
+            }, 4000);
         }
 
-        function activateTruthMode() {
-            document.body.classList.add('truth-mode');
-            document.querySelector('.logo').innerText = "WAKE UP";
-            document.getElementById('admin-code').style.display = 'none';
-            
-            // 8초 후 경고 및 종료 시퀀스
-            setTimeout(triggerEmergency, 8000);
-        }
-
-        function triggerEmergency() {
-            const overlay = document.getElementById('emergency-overlay');
-            const countEl = document.getElementById('countdown');
-            overlay.style.display = 'flex';
-            
-            let timeLeft = 3;
-            const timer = setInterval(() => {
-                timeLeft--;
-                countEl.innerText = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(timer);
-                    document.body.innerHTML = "<div style='display:flex;justify-content:center;align-items:center;height:100vh;background:black;color:#00f2ff;font-family:monospace;'>SYSTEM TERMINATED_</div>";
-                }
-            }, 1000);
-        }
+        // 초기 실행
+        renderInputs();
+        draw();
     </script>
 </body>
 </html>
