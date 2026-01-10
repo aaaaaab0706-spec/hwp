@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정밀 확률 룰렛 - 최종 수정</title>
+    <title>정밀 확률 룰렛 - 최종 수정 완료</title>
     <style>
         body { font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; background: #f8f9fa; padding: 20px; }
         .container { display: flex; gap: 30px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); flex-wrap: wrap; justify-content: center; max-width: 900px; }
         .roulette-box { position: relative; width: 380px; height: 380px; }
         #canvas { width: 100%; height: 100%; border-radius: 50%; border: 6px solid #333; transition: transform 4s cubic-bezier(0.1, 0, 0.2, 1); }
+        /* 빨간 화살표가 12시 정중앙에 위치 */
         .arrow { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #ff4757; z-index: 10; }
         .controls { width: 320px; }
         .item-row { display: flex; gap: 5px; margin-bottom: 10px; }
@@ -24,7 +25,7 @@
 </head>
 <body>
 
-    <h2>🎡 결과 일치 룰렛 (180도 오류 수정)</h2>
+    <h2>🎡 결과 일치 룰렛 (최종 물리 보정)</h2>
 
     <div class="container">
         <div class="roulette-box">
@@ -45,8 +46,10 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         let items = [
-            { name: "당첨", weight: 5, color: "#ff7675" },
-            { name: "꽝", weight: 5, color: "#74b9ff" }
+            { name: "꽝", weight: 4, color: "#74b9ff" },
+            { name: "아차상", weight: 6, color: "#55efc4" },
+            { name: "새 항목1", weight: 5, color: "#ffeaa7" },
+            { name: "새 항목2", weight: 5, color: "#ff7675" }
         ];
         let currentRotation = 0;
 
@@ -63,7 +66,9 @@
                 ctx.beginPath();
                 ctx.fillStyle = item.color;
                 ctx.moveTo(400, 400);
-                ctx.arc(400, 400, 380, startAngle, startAngle + sliceAngle);
+                // 캔버스 기본 시작점(3시)을 12시로 맞추기 위해 전체를 -90도(-PI/2)부터 그립니다.
+                const offset = -Math.PI / 2;
+                ctx.arc(400, 400, 380, startAngle + offset, startAngle + sliceAngle + offset);
                 ctx.fill();
                 ctx.strokeStyle = "white";
                 ctx.lineWidth = 4;
@@ -71,7 +76,7 @@
 
                 ctx.save();
                 ctx.translate(400, 400);
-                ctx.rotate(startAngle + sliceAngle / 2);
+                ctx.rotate(startAngle + sliceAngle / 2 + offset);
                 ctx.textAlign = "right";
                 ctx.fillStyle = "white";
                 ctx.font = "bold 30px Arial";
@@ -129,26 +134,23 @@
             res.innerText = "회전 중...";
 
             const randomDeg = Math.floor(Math.random() * 360);
-            // 8바퀴(2880도) 이상 회전하도록 설정
             currentRotation += (360 * 8) + randomDeg;
             canvas.style.transform = `rotate(${currentRotation}deg)`;
 
             setTimeout(() => {
                 btn.disabled = false;
                 
-                // --- 180도 오류 해결을 위한 핵심 계산부 ---
-                // 1. 실제로 회전된 최종 각도를 0~360 범위로 구함
+                // --- 핵심 보정: 룰렛판의 시각적 위치와 로직의 일치 ---
+                // 판이 시계방향(+)으로 돌아가면, 바늘이 가리키는 지점은 반시계방향(-)으로 이동합니다.
                 const actualDeg = currentRotation % 360;
-                
-                // 2. 12시 방향(화살표)을 가리키는 인덱스 계산
-                // 원리가 복잡할 수 있으나, 이 수식이 상단 화살표 기준 정답입니다.
-                let winAngle = (360 - actualDeg + 270) % 360;
+                let winAngle = (360 - actualDeg) % 360;
 
                 let currentUpper = 0;
-                let winner = "";
+                let winner = "오류";
                 for (let item of items) {
                     const itemDeg = (parseFloat(item.weight) / totalWeight) * 360;
-                    if (winAngle >= currentUpper && winAngle < currentUpper + itemDeg) {
+                    // 각 항목의 범위를 체크 (작은 오차 보정을 위해 +0.01)
+                    if (winAngle >= currentUpper - 0.01 && winAngle < currentUpper + itemDeg) {
                         winner = item.name;
                         break;
                     }
