@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -6,10 +7,20 @@
     <title>정밀 확률 룰렛 - 최종 수정 완료</title>
     <style>
         body { font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; background: #f8f9fa; padding: 20px; }
+        
+        /* 탭 메뉴 */
+        .tab-menu { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 12px 24px; background: #dfe6e9; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: all 0.3s; }
+        .tab-btn.active { background: #0984e3; color: white; }
+        .tab-btn:hover { background: #74b9ff; color: white; }
+        
+        /* 탭 컨텐츠 */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
         .container { display: flex; gap: 30px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); flex-wrap: wrap; justify-content: center; max-width: 900px; }
         .roulette-box { position: relative; width: 380px; height: 380px; }
         #canvas { width: 100%; height: 100%; border-radius: 50%; border: 6px solid #333; transition: transform 4s cubic-bezier(0.1, 0, 0.2, 1); }
-        /* 빨간 화살표가 12시 정중앙에 위치 */
         .arrow { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #ff4757; z-index: 10; }
         .controls { width: 320px; }
         .item-row { display: flex; gap: 5px; margin-bottom: 10px; }
@@ -21,28 +32,122 @@
         .btn-add { background: #00b894; color: white; width: 100%; padding: 10px; margin-bottom: 15px; }
         .btn-remove { background: #ff7675; color: white; padding: 5px 10px; }
         #result-text { margin-top: 20px; font-size: 1.5rem; font-weight: 800; text-align: center; min-height: 40px; color: #2d3436; }
+        
+        /* 주사위 스타일 */
+        .dice-container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 600px; width: 100%; }
+        .dice-settings { margin-bottom: 30px; }
+        .dice-settings label { display: block; margin-bottom: 10px; font-weight: bold; font-size: 1.1rem; }
+        .dice-settings input { width: 100%; padding: 12px; font-size: 1.1rem; }
+        .dice-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin: 30px 0; min-height: 150px; }
+        .dice { width: 80px; height: 80px; background: white; border: 3px solid #333; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.2); position: relative; animation: rollDice 0.5s ease-in-out; }
+        @keyframes rollDice { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(90deg); } 50% { transform: rotate(180deg); } 75% { transform: rotate(270deg); } }
+        .dice-result { margin-top: 20px; font-size: 1.3rem; font-weight: bold; text-align: center; color: #2d3436; }
+        .dice-total { font-size: 2rem; color: #0984e3; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <h2>🎡 결과 일치 룰렛 (최종 물리 보정)</h2>
+    <h2>🎲 랜덤 도구</h2>
 
-    <div class="container">
-        <div class="roulette-box">
-            <div class="arrow"></div>
-            <canvas id="canvas" width="800" height="800"></canvas>
-            <button class="btn-spin" id="spinBtn" onclick="spin()">돌리기!</button>
-            <div id="result-text">가중치를 입력해 보세요!</div>
+    <!-- 탭 메뉴 -->
+    <div class="tab-menu">
+        <button class="tab-btn active" onclick="switchTab('roulette')">룰렛</button>
+        <button class="tab-btn" onclick="switchTab('dice')">주사위</button>
+    </div>
+
+    <!-- 룰렛 탭 -->
+    <div id="roulette-tab" class="tab-content active">
+        <div class="container">
+            <div class="roulette-box">
+                <div class="arrow"></div>
+                <canvas id="canvas" width="800" height="800"></canvas>
+                <button class="btn-spin" id="spinBtn" onclick="spin()">돌리기!</button>
+                <div id="result-text">가중치를 입력해 보세요!</div>
+            </div>
+
+            <div class="controls">
+                <h3>항목 및 가중치 설정</h3>
+                <div id="item-list"></div>
+                <button class="btn-add" onclick="addItem()">+ 항목 추가</button>
+            </div>
         </div>
+    </div>
 
-        <div class="controls">
-            <h3>항목 및 가중치 설정</h3>
-            <div id="item-list"></div>
-            <button class="btn-add" onclick="addItem()">+ 항목 추가</button>
+    <!-- 주사위 탭 -->
+    <div id="dice-tab" class="tab-content">
+        <div class="dice-container">
+            <div class="dice-settings">
+                <label for="dice-count">주사위 개수:</label>
+                <input type="number" id="dice-count" min="1" max="20" value="2" placeholder="주사위 개수 입력">
+            </div>
+            <button class="btn-spin" onclick="rollDice()">주사위 굴리기! 🎲</button>
+            <div class="dice-grid" id="dice-grid"></div>
+            <div class="dice-result" id="dice-result"></div>
         </div>
     </div>
 
     <script>
+        // 탭 전환 함수
+        function switchTab(tab) {
+            const tabs = document.querySelectorAll('.tab-content');
+            const btns = document.querySelectorAll('.tab-btn');
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            btns.forEach(b => b.classList.remove('active'));
+            
+            if (tab === 'roulette') {
+                document.getElementById('roulette-tab').classList.add('active');
+                btns[0].classList.add('active');
+            } else {
+                document.getElementById('dice-tab').classList.add('active');
+                btns[1].classList.add('active');
+            }
+        }
+
+        // 주사위 굴리기 함수
+        function rollDice() {
+            const count = parseInt(document.getElementById('dice-count').value) || 1;
+            const grid = document.getElementById('dice-grid');
+            const resultDiv = document.getElementById('dice-result');
+            
+            if (count < 1 || count > 20) {
+                alert('1~20 사이의 숫자를 입력해주세요!');
+                return;
+            }
+            
+            grid.innerHTML = '';
+            resultDiv.innerHTML = '';
+            
+            let results = [];
+            let total = 0;
+            
+            for (let i = 0; i < count; i++) {
+                const dice = document.createElement('div');
+                dice.className = 'dice';
+                
+                // 애니메이션 딜레이
+                dice.style.animationDelay = `${i * 0.1}s`;
+                
+                setTimeout(() => {
+                    const value = Math.floor(Math.random() * 6) + 1;
+                    results.push(value);
+                    total += value;
+                    dice.textContent = value;
+                    
+                    if (results.length === count) {
+                        resultDiv.innerHTML = `
+                            결과: ${results.join(', ')}<br>
+                            <div class="dice-total">합계: ${total}</div>
+                        `;
+                    }
+                }, (i * 100) + 500);
+                
+                dice.textContent = '?';
+                grid.appendChild(dice);
+            }
+        }
+
+        // 룰렛 코드
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         let items = [
@@ -66,7 +171,6 @@
                 ctx.beginPath();
                 ctx.fillStyle = item.color;
                 ctx.moveTo(400, 400);
-                // 캔버스 기본 시작점(3시)을 12시로 맞추기 위해 전체를 -90도(-PI/2)부터 그립니다.
                 const offset = -Math.PI / 2;
                 ctx.arc(400, 400, 380, startAngle + offset, startAngle + sliceAngle + offset);
                 ctx.fill();
@@ -140,8 +244,6 @@
             setTimeout(() => {
                 btn.disabled = false;
                 
-                // --- 핵심 보정: 룰렛판의 시각적 위치와 로직의 일치 ---
-                // 판이 시계방향(+)으로 돌아가면, 바늘이 가리키는 지점은 반시계방향(-)으로 이동합니다.
                 const actualDeg = currentRotation % 360;
                 let winAngle = (360 - actualDeg) % 360;
 
@@ -149,7 +251,6 @@
                 let winner = "오류";
                 for (let item of items) {
                     const itemDeg = (parseFloat(item.weight) / totalWeight) * 360;
-                    // 각 항목의 범위를 체크 (작은 오차 보정을 위해 +0.01)
                     if (winAngle >= currentUpper - 0.01 && winAngle < currentUpper + itemDeg) {
                         winner = item.name;
                         break;
@@ -165,3 +266,4 @@
     </script>
 </body>
 </html>
+```
