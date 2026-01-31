@@ -34,15 +34,21 @@
         #result-text { margin-top: 20px; font-size: 1.5rem; font-weight: 800; text-align: center; min-height: 40px; color: #2d3436; }
         
         /* 주사위 스타일 */
-        .dice-container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 600px; width: 100%; }
+        .dice-container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 600px; width: 100%; text-align: center; }
         .dice-settings { margin-bottom: 30px; }
         .dice-settings label { display: block; margin-bottom: 10px; font-weight: bold; font-size: 1.1rem; }
-        .dice-settings input { width: 100%; padding: 12px; font-size: 1.1rem; }
-        .dice-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin: 30px 0; min-height: 150px; }
-        .dice { width: 80px; height: 80px; background: white; border: 3px solid #333; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.2); position: relative; animation: rollDice 0.5s ease-in-out; }
-        @keyframes rollDice { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(90deg); } 50% { transform: rotate(180deg); } 75% { transform: rotate(270deg); } }
-        .dice-result { margin-top: 20px; font-size: 1.3rem; font-weight: bold; text-align: center; color: #2d3436; }
-        .dice-total { font-size: 2rem; color: #0984e3; margin-top: 10px; }
+        .dice-settings input { width: 100%; padding: 12px; font-size: 1.1rem; text-align: center; }
+        .dice-display { margin: 40px 0; display: flex; justify-content: center; align-items: center; min-height: 200px; }
+        .dice { width: 160px; height: 160px; background: white; border: 4px solid #333; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: bold; box-shadow: 0 8px 16px rgba(0,0,0,0.3); transition: transform 0.1s; }
+        .dice.rolling { animation: rollDice 0.6s ease-in-out infinite; }
+        @keyframes rollDice { 
+            0% { transform: rotate(0deg) scale(1); } 
+            25% { transform: rotate(90deg) scale(1.1); } 
+            50% { transform: rotate(180deg) scale(1); } 
+            75% { transform: rotate(270deg) scale(1.1); } 
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        .dice-result { margin-top: 20px; font-size: 1.5rem; font-weight: bold; color: #2d3436; }
     </style>
 </head>
 <body>
@@ -77,11 +83,13 @@
     <div id="dice-tab" class="tab-content">
         <div class="dice-container">
             <div class="dice-settings">
-                <label for="dice-count">주사위 개수:</label>
-                <input type="number" id="dice-count" min="1" max="20" value="2" placeholder="주사위 개수 입력">
+                <label for="dice-max">주사위 최대 눈 (1 ~ ?)</label>
+                <input type="number" id="dice-max" min="2" max="1000" value="6" placeholder="주사위 최대 눈 입력">
             </div>
             <button class="btn-spin" onclick="rollDice()">주사위 굴리기! 🎲</button>
-            <div class="dice-grid" id="dice-grid"></div>
+            <div class="dice-display">
+                <div class="dice" id="dice">?</div>
+            </div>
             <div class="dice-result" id="dice-result"></div>
         </div>
     </div>
@@ -106,45 +114,33 @@
 
         // 주사위 굴리기 함수
         function rollDice() {
-            const count = parseInt(document.getElementById('dice-count').value) || 1;
-            const grid = document.getElementById('dice-grid');
+            const maxValue = parseInt(document.getElementById('dice-max').value) || 6;
+            const dice = document.getElementById('dice');
             const resultDiv = document.getElementById('dice-result');
             
-            if (count < 1 || count > 20) {
-                alert('1~20 사이의 숫자를 입력해주세요!');
+            if (maxValue < 2 || maxValue > 1000) {
+                alert('2~1000 사이의 숫자를 입력해주세요!');
                 return;
             }
             
-            grid.innerHTML = '';
+            dice.classList.add('rolling');
             resultDiv.innerHTML = '';
             
-            let results = [];
-            let total = 0;
-            
-            for (let i = 0; i < count; i++) {
-                const dice = document.createElement('div');
-                dice.className = 'dice';
+            let counter = 0;
+            const rollingInterval = setInterval(() => {
+                const randomNum = Math.floor(Math.random() * maxValue) + 1;
+                dice.textContent = randomNum;
+                counter++;
                 
-                // 애니메이션 딜레이
-                dice.style.animationDelay = `${i * 0.1}s`;
-                
-                setTimeout(() => {
-                    const value = Math.floor(Math.random() * 6) + 1;
-                    results.push(value);
-                    total += value;
-                    dice.textContent = value;
+                if (counter >= 10) {
+                    clearInterval(rollingInterval);
+                    dice.classList.remove('rolling');
                     
-                    if (results.length === count) {
-                        resultDiv.innerHTML = `
-                            결과: ${results.join(', ')}<br>
-                            <div class="dice-total">합계: ${total}</div>
-                        `;
-                    }
-                }, (i * 100) + 500);
-                
-                dice.textContent = '?';
-                grid.appendChild(dice);
-            }
+                    const finalResult = Math.floor(Math.random() * maxValue) + 1;
+                    dice.textContent = finalResult;
+                    resultDiv.innerHTML = `🎉 결과: <strong style="font-size: 2rem; color: #0984e3;">${finalResult}</strong> (1~${maxValue})`;
+                }
+            }, 100);
         }
 
         // 룰렛 코드
